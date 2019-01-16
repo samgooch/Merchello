@@ -852,9 +852,9 @@
             //var ends = endDate.AddDays(1);
 
             const string SQL =
-                @"SELECT SUM([merchInvoice].total) FROM merchInvoice WHERE [merchInvoice].invoiceDate BETWEEN @starts and @ends AND [merchInvoice].currencyCode = @cc";
+                @"SELECT SUM([merchInvoice].total) FROM merchInvoice WHERE [merchInvoice].invoiceDate BETWEEN @starts and @ends AND [merchInvoice].currencyCode = @cc AND ([merchInvoice].invoiceStatusKey = @paid OR [merchInvoice].invoiceStatusKey = @partiallyPaid)";
 
-            return Database.ExecuteScalar<decimal>(SQL, new { @starts = startDate, @ends = endDate, @cc = currencyCode });
+            return Database.ExecuteScalar<decimal>(SQL, new { @starts = startDate.ToIsoString(), @ends = endDate.ToIsoString(), @cc = currencyCode, @paid = Core.Constants.InvoiceStatus.Paid, @partiallyPaid = Core.Constants.InvoiceStatus.Partial });
         }
 
         /// <summary>

@@ -75,7 +75,7 @@
             this.SearchTerm = string.Empty;
             this.Page = 1;
             this.ItemsPerPage = 10;
-            this.SortBy = ProductSortField.Name;
+            this.SortBy = ProductSortField.None;
             this.SortDirection = SortDirection.Ascending;
             this.CollectionClusivity = CollectionClusivity.ExistsInAllCollectionsAndFilters;
             this.ClearPriceRange();
@@ -100,7 +100,7 @@
         /// </returns>
         protected override ICmsContentQuery<IProductContent> Build()
         {
-            var sortBy = SortBy.ToString().ToLowerInvariant();
+            var sortBy = SortBy == ProductSortField.None ? string.Empty : SortBy.ToString().ToLowerInvariant();
 
             var query = new ProductContentQuery(_cachedQuery)
             {
@@ -108,6 +108,7 @@
                 ItemsPerPage = ItemsPerPage,
                 SortBy = sortBy,
                 SortDirection = SortDirection,
+                ProductKeys = this.ProductKeys,
                 CollectionKeys = this.CollectionKeys,
                 CollectionClusivity = this.CollectionClusivity
             };

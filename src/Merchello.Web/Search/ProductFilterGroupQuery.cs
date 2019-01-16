@@ -142,6 +142,32 @@
         }
 
         /// <summary>
+        /// Gets a collection of <see cref="IProductFilterGroup"/> that has at least one filter that contains a product with key passed as parameter.
+        /// </summary>
+        /// <param name="productKeys">
+        /// The product keys.
+        /// </param>
+        /// <returns>
+        /// The <see cref="IEnumerable{IProductFilterGroup}"/>.
+        /// </returns>
+        public IEnumerable<IProductFilterGroup> GetFilterGroupsContainingProducts(Guid[] productKeys)
+        {
+            var cacheKey = this.GetCacheKey("GetFilterGroupsContainingProducts", productKeys);
+
+            var filterGroups = (IEnumerable<IProductFilterGroup>)this.Cache.GetCacheItem(cacheKey);
+            if (filterGroups != null) return filterGroups;
+
+            return
+                (IEnumerable<IProductFilterGroup>)
+                this.Cache.GetCacheItem(
+                    cacheKey,
+                    () =>
+                    Map(((EntityCollectionService)this.Service).GetEntityFilterGroupsContainingProducts(
+                        this._filterProviderKeys,
+                            productKeys)));
+        }
+
+        /// <summary>
         /// Gets a collection of <see cref="IProductFilterGroup"/> in which NONE of the filters contains a product with key passed as parameter.
         /// </summary>
         /// <param name="productKey">

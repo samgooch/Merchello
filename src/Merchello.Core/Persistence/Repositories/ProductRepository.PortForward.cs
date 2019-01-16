@@ -9,6 +9,7 @@
     using Merchello.Core.Persistence.Querying;
 
     using Umbraco.Core.Persistence;
+    using System.Text;
 
     /// <inheritdoc/>
     internal partial class ProductRepository : IPortForwardProductRepository
@@ -134,6 +135,125 @@
                 .Append(")");
 
             pagedKeys = GetPagedKeys(page, itemsPerPage, sql, orderExpression, sortDirection);
+
+            return CachePageOfKeys(cacheKey, pagedKeys);
+        }
+
+        public Page<Guid> GetProductKeys(
+            Guid[] productKeys,
+            Guid[] collectionKeys,
+            decimal min,
+            decimal max,
+            long page,
+            long itemsPerPage,
+            string orderExpression,
+            SortDirection sortDirection = SortDirection.Descending)
+        {
+            var cacheKey = GetPagedDtoCacheKey(
+                                       "GetProductKeys",
+                                       page,
+                                       itemsPerPage,
+                                       orderExpression,
+                                       sortDirection,
+                                       new Dictionary<string, string>
+                                           {
+                                                { "productKeys", string.Join(string.Empty, productKeys) },
+                                                { "collectionKeys", string.Join(string.Empty, collectionKeys) },
+                                                { "minmax", string.Join(string.Empty, new object[] { min, max }) }
+                                           });
+
+            var pagedKeys = TryGetCachedPageOfKeys(cacheKey);
+            if (pagedKeys != null) return pagedKeys;
+
+            var sql = new Sql();
+            sql.Append("SELECT *")
+              .Append("FROM [merchProductVariant]");
+
+            if (collectionKeys.Any())
+            {
+                sql.Append("WHERE [merchProductVariant].[productKey] IN (")
+                 .Append("SELECT [productKey]")
+                 .Append("FROM [merchProduct2EntityCollection]")
+                 .Append("WHERE [merchProduct2EntityCollection].[entityCollectionKey] IN (@eckeys)", new { @eckeys = collectionKeys })
+                 .Append("GROUP BY productKey")
+                 .Append("HAVING COUNT(*) = @keyCount", new { @keyCount = collectionKeys.Count() })
+                 .Append(")");
+            }
+
+            sql.Append("AND [merchProductVariant].[master] = 1")
+               .Append("AND ((CASE WHEN [merchProductVariant].[salePrice] > 0 THEN [merchProductVariant].[salePrice] ELSE [merchProductVariant].[price] END) BETWEEN @low AND @high)", new { @low = min, @high = max });
+
+            var customOrderBy = new StringBuilder();
+            customOrderBy.Append("ORDER BY (CASE [merchProductVariant].[productKey] ");
+
+            var count = 1;
+            foreach (var productKey in productKeys)
+            {
+                customOrderBy.Append("WHEN '" + productKey + "' THEN " + count + " ");
+                count++;
+            }
+            customOrderBy.Append("END) ASC");
+
+            pagedKeys = GetPagedKeys(page, itemsPerPage, sql, orderExpression, sortDirection, customOrderBy.ToString());
+
+            return CachePageOfKeys(cacheKey, pagedKeys);
+        }
+
+        /// <inheritdoc/>
+        public Page<Guid> GetProductKeys(
+            Guid[] productKeys,
+            Guid[] collectionKeys,
+            string term,
+            decimal min,
+            decimal max,
+            long page,
+            long itemsPerPage,
+            string orderExpression,
+            SortDirection sortDirection = SortDirection.Descending)
+        {
+            var cacheKey = GetPagedDtoCacheKey(
+                            "GetProductKeys",
+                            page,
+                            itemsPerPage,
+                            orderExpression,
+                            sortDirection,
+                            new Dictionary<string, string>
+                                {
+                                    { "productKeys", string.Join(string.Empty, productKeys) },
+                                    { "collectionKeys", string.Join(string.Empty, collectionKeys) }
+                                });
+
+            var pagedKeys = TryGetCachedPageOfKeys(cacheKey);
+            if (pagedKeys != null) return pagedKeys;
+
+            var sql = this.BuildProductSearchSql(term);
+
+            if (collectionKeys.Any())
+            {
+                sql.Append("AND WHERE [merchProductVariant].[productKey] IN (")
+                 .Append("SELECT [productKey]")
+                 .Append("FROM [merchProduct2EntityCollection]")
+                 .Append("WHERE [merchProduct2EntityCollection].[entityCollectionKey] IN (@eckeys)", new { @eckeys = collectionKeys })
+                 .Append("GROUP BY productKey")
+                 .Append("HAVING COUNT(*) = @keyCount", new { @keyCount = collectionKeys.Count() })
+                 .Append(")");
+            }
+
+            sql.Append("AND [merchProductVariant].[master] = 1")
+               .Append("AND ((CASE WHEN [merchProductVariant].[salePrice] > 0 THEN [merchProductVariant].[salePrice] ELSE [merchProductVariant].[price] END) BETWEEN @low AND @high)", new { @low = min, @high = max });
+
+            var customOrderBy = new StringBuilder();
+            customOrderBy.Append("ORDER BY (CASE [merchProductVariant].[productKey] ");
+
+            var count = 1;
+            foreach (var productKey in productKeys)
+            {
+                customOrderBy.Append("WHEN '" + productKey + "' THEN " + count + " ");
+                count++;
+            }
+            customOrderBy.Append("END) ASC");
+
+            pagedKeys = GetPagedKeys(page, itemsPerPage, sql, orderExpression, sortDirection, customOrderBy.ToString());
 
             return CachePageOfKeys(cacheKey, pagedKeys);
         }

@@ -33,7 +33,7 @@
         /// <summary>
         /// The valid sort fields.
         /// </summary>
-        private static readonly string[] ValidSortFields = { "sku", "name", "price" };
+        private static readonly string[] ValidSortFields = { "sku", "name", "price", "createdate", "updatedate" };
 
         /// <summary>
         /// The product variant service.
@@ -1052,6 +1052,86 @@
         }
 
         /// <summary>
+        /// The get keys from collection.
+        /// </summary>
+        /// <param name="productKeys">
+        /// The product keys.
+        /// </param>
+        /// <param name="collectionKeys">
+        /// The collection keys.
+        /// </param>
+        /// <param name="searchTerm">
+        /// The search term.
+        /// </param>
+        /// <param name="page">
+        /// The page.
+        /// </param>
+        /// <param name="itemsPerPage">
+        /// The items per page.
+        /// </param>
+        /// <param name="sortBy">
+        /// The sort by.
+        /// </param>
+        /// <param name="sortDirection">
+        /// The sort direction.
+        /// </param>
+        /// <returns>
+        /// The <see cref="Page{Guid}"/>.
+        /// </returns>
+        internal Page<Guid> GetProductKeys(
+            IEnumerable<Guid> productKeys,
+            IEnumerable<Guid> collectionKeys,
+            string searchTerm,
+            long page,
+            long itemsPerPage,
+            string sortBy = "",
+            SortDirection sortDirection = SortDirection.Descending)
+        {
+            using (var repository = RepositoryFactory.CreateProductRepository(UowProvider.GetUnitOfWork()))
+            {
+                return repository.GetProductKeys(productKeys.ToArray(), collectionKeys.ToArray(), searchTerm, page, itemsPerPage, this.ValidateSortByField(sortBy), sortDirection);
+            }
+        }
+
+        /// <summary>
+        /// The get product keys from collection.
+        /// </summary>
+        /// <param name="productKeys">
+        /// The product keys.
+        /// </param>
+        /// <param name="collectionKeys">
+        /// The collection keys.
+        /// </param>
+        /// <param name="page">
+        /// The page.
+        /// </param>
+        /// <param name="itemsPerPage">
+        /// The items per page.
+        /// </param>
+        /// <param name="sortBy">
+        /// The sort by.
+        /// </param>
+        /// <param name="sortDirection">
+        /// The sort direction.
+        /// </param>
+        /// <returns>
+        /// The <see cref="Page{Guid}"/>.
+        /// </returns>
+        internal Page<Guid> GetProductKeys(
+            IEnumerable<Guid> productKeys,
+            IEnumerable<Guid> collectionKeys,
+            long page,
+            long itemsPerPage,
+            string sortBy = "",
+            SortDirection sortDirection = SortDirection.Descending)
+        {
+            using (var repository = RepositoryFactory.CreateProductRepository(UowProvider.GetUnitOfWork()))
+            {
+                return repository.GetProductKeys(productKeys.ToArray(), collectionKeys.ToArray(), page, itemsPerPage, this.ValidateSortByField(sortBy), sortDirection);
+            }
+        }
+
+        /// <summary>
         /// The get keys not in collection.
         /// </summary>
         /// <param name="collectionKey">
@@ -1864,7 +1944,10 @@
         /// </returns>
         protected override string ValidateSortByField(string sortBy)
         {
-            return ValidSortFields.Contains(sortBy.ToLowerInvariant()) ? sortBy : "name";
+            sortBy = ValidSortFields.Contains(sortBy.ToLowerInvariant()) ? sortBy : string.Empty;
+            if (sortBy.Equals("price", StringComparison.InvariantCultureIgnoreCase))
+                sortBy = "(CASE WHEN salePrice > 0 THEN salePrice ELSE price END)";
+            return sortBy;
         }
 
         /// <summary>

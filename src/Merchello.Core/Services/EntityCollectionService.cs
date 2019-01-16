@@ -833,6 +833,27 @@
         /// <param name="keys">
         /// The keys.
         /// </param>
+        /// <param name="productKeys">
+        /// The product keys.
+        /// </param>
+        /// <returns>
+        /// The <see cref="IEnumerable{IEntityFilterGroup}"/>.
+        /// </returns>
+        internal IEnumerable<IEntityFilterGroup> GetEntityFilterGroupsContainingProducts(IEnumerable<Guid> keys, IEnumerable<Guid> productKeys)
+        {
+            using (var repository = RepositoryFactory.CreateEntityCollectionRepository(UowProvider.GetUnitOfWork()))
+            {
+                return repository.GetEntityFilterGroupsContainingProducts(keys.ToArray(), productKeys.ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Gets a collection of <see cref="IEntityFilterGroup"/> by a collection of keys that are not associated
+        /// with a product
+        /// </summary>
+        /// <param name="keys">
+        /// The keys.
+        /// </param>
         /// <param name="productKey">
         /// The product key.
         /// </param>

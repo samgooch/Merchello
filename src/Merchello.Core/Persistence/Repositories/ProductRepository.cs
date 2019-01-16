@@ -15,6 +15,7 @@
     using Umbraco.Core.Persistence;
     using Umbraco.Core.Persistence.Querying;
     using Umbraco.Core.Persistence.SqlSyntax;
+    using System.Text;
 
     // REFACTOR request based caching should be either all done in .Web services or all done here in a base class
 
@@ -1136,6 +1137,118 @@
             return CachePageOfKeys(cacheKey, pagedKeys);
         }
 
+        public Page<Guid> GetProductKeys(
+            Guid[] productKeys,
+            Guid[] collectionKeys,
+            string term,
+            long page,
+            long itemsPerPage,
+            string orderExpression,
+            SortDirection sortDirection = SortDirection.Descending)
+        {
+            var cacheKey = GetPagedDtoCacheKey(
+                "GetProductKeys",
+                page,
+                itemsPerPage,
+                orderExpression,
+                sortDirection,
+                new Dictionary<string, string>
+                    {
+                        { "productKeys", string.Join(string.Empty, productKeys) },
+                        { "collectionKeys", string.Join(string.Empty, collectionKeys) },
+                        { "term", term }
+                    });
+
+            var pagedKeys = TryGetCachedPageOfKeys(cacheKey);
+            if (pagedKeys != null) return pagedKeys;
+
+            var sql = this.BuildProductSearchSql(term);
+
+            if (collectionKeys.Any())
+            {
+                sql.Append("AND WHERE [merchProductVariant].[productKey] IN (")
+                 .Append("SELECT [productKey]")
+                 .Append("FROM [merchProduct2EntityCollection]")
+                 .Append("WHERE [merchProduct2EntityCollection].[entityCollectionKey] IN (@eckeys)", new { @eckeys = collectionKeys })
+                 .Append("GROUP BY productKey")
+                 .Append("HAVING COUNT(*) = @keyCount", new { @keyCount = collectionKeys.Count() })
+                 .Append(")");
+            }
+
+            sql.Append("AND [merchProductVariant].[master] = 1");
+
+            var customOrderBy = new StringBuilder();
+            customOrderBy.Append("ORDER BY (CASE [merchProductVariant].[productKey] ");
+
+            var count = 1;
+            foreach (var productKey in productKeys)
+            {
+                customOrderBy.Append("WHEN '" + productKey + "' THEN " + count + " ");
+                count++;
+            }
+            customOrderBy.Append("END) ASC");
+
+            pagedKeys = GetPagedKeys(page, itemsPerPage, sql, orderExpression, sortDirection, customOrderBy.ToString());
+
+            return CachePageOfKeys(cacheKey, pagedKeys);
+        }
+
+        public Page<Guid> GetProductKeys(
+            Guid[] productKeys,
+            Guid[] collectionKeys,
+            long page,
+            long itemsPerPage,
+            string orderExpression,
+            SortDirection sortDirection = SortDirection.Descending)
+        {
+            var cacheKey = GetPagedDtoCacheKey(
+                "GetProductKeys",
+                page,
+                itemsPerPage,
+                orderExpression,
+                sortDirection,
+                new Dictionary<string, string>
+                    {
+                        { "productKeys", string.Join(string.Empty, productKeys) },
+                        { "collectionKeys", string.Join(string.Empty, collectionKeys) }
+                    });
+
+            var pagedKeys = TryGetCachedPageOfKeys(cacheKey);
+            if (pagedKeys != null) return pagedKeys;
+
+            var sql = new Sql();
+            sql.Append("SELECT *")
+               .Append("FROM dbo.merchProductVariant");
+
+            if (collectionKeys.Any())
+            {
+                sql.Append("WHERE [merchProductVariant].[productKey] IN (")
+                 .Append("SELECT [productKey]")
+                 .Append("FROM [merchProduct2EntityCollection]")
+                 .Append("WHERE [merchProduct2EntityCollection].[entityCollectionKey] IN (@eckeys)", new { @eckeys = collectionKeys })
+                 .Append("GROUP BY productKey")
+                 .Append("HAVING COUNT(*) = @keyCount", new { @keyCount = collectionKeys.Count() })
+                 .Append(")");
+            }
+
+            sql.Append("AND [merchProductVariant].[master] = 1");
+
+            var customOrderBy = new StringBuilder();
+            customOrderBy.Append("ORDER BY (CASE [merchProductVariant].[productKey] ");
+
+            var count = 1;
+            foreach (var productKey in productKeys)
+            {
+                customOrderBy.Append("WHEN '" + productKey + "' THEN " + count + " ");
+                count++;
+            }
+            customOrderBy.Append("END) ASC");
+
+            pagedKeys = GetPagedKeys(page, itemsPerPage, sql, orderExpression, sortDirection, customOrderBy.ToString());
+
+            return CachePageOfKeys(cacheKey, pagedKeys);
+        }
+
         /// <summary>
         /// The get keys not in collection.
         /// </summary>
@@ -1666,6 +1779,41 @@
             };
         }
 
+        /// <summary>
+        /// Get the paged keys.
+        /// </summary>
+        /// <param name="page">
+        /// The page.
+        /// </param>
+        /// <param name="itemsPerPage">
+        /// The items per page.
+        /// </param>
+        /// <param name="sql">
+        /// The <see cref="Sql"/>.
+        /// </param>
+        /// <param name="orderExpression">
+        /// The order expression.
+        /// </param>
+        /// <param name="sortDirection">
+        /// The sort direction.
+        /// </param>
+        /// <returns>
+        /// The <see cref="Page{Guid}"/>.
+        /// </returns>
+        protected Page<Guid> GetPagedKeys(long page, long itemsPerPage, Sql sql, string orderExpression, SortDirection sortDirection = SortDirection.Descending, string customOrderBy = "")
+        {
+            var p = GetDtoPage(page, itemsPerPage, sql, orderExpression, sortDirection, customOrderBy);
+
+            return new Page<Guid>()
+            {
+                CurrentPage = p.CurrentPage,
+                ItemsPerPage = p.ItemsPerPage,
+                TotalItems = p.TotalItems,
+                TotalPages = p.TotalPages,
+                Items = p.Items.Select(x => x.ProductKey).ToList()
+            };
+        }
+
 
         /// <summary>
         /// The perform get.
@@ -1911,13 +2059,21 @@
         /// <returns>
         /// The <see cref="Page{ProductVariantDto}"/>.
         /// </returns>
-        private new Page<ProductVariantDto> GetDtoPage(long page, long itemsPerPage, Sql sql, string orderExpression, SortDirection sortDirection = SortDirection.Descending)
+        private Page<ProductVariantDto> GetDtoPage(long page, long itemsPerPage, Sql sql, string orderExpression, SortDirection sortDirection = SortDirection.Descending, string customOrderBy = "")
         {
-            if (!string.IsNullOrEmpty(orderExpression))
+            if (!string.IsNullOrEmpty(customOrderBy))
+            {
+                sql.Append(customOrderBy);
+            }
+            else if (!string.IsNullOrEmpty(orderExpression))
             {
                 sql.Append(sortDirection == SortDirection.Ascending
                     ? string.Format("ORDER BY {0} ASC", orderExpression)
                     : string.Format("ORDER BY {0} DESC", orderExpression));
+            }
+            else
+            {
+                sql.Append("ORDER BY(SELECT NULL)");
             }
 
             return Database.Page<ProductVariantDto>(page, itemsPerPage, sql);

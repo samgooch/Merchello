@@ -110,6 +110,11 @@
         public SortDirection SortDirection { get; set; }
 
         /// <summary>
+        /// Gets or sets the product keys.
+        /// </summary>
+        public Guid[] ProductKeys { get; set; }
+
+        /// <summary>
         /// Gets or sets the collection keys.
         /// </summary>
         public Guid[] CollectionKeys { get; set; }
@@ -127,6 +132,21 @@
         /// </returns>
         public PagedCollection<IProductContent> Execute()
         {
+            var hasProductKeys = ProductKeys != null && ProductKeys.Any();
+            if (hasProductKeys)
+            {
+                if (!HasPriceRange)
+                {
+                    return HasSearchTerm ?
+                        _query.TypedProductContentByKeys(ProductKeys, CollectionKeys, SearchTerm, Page, ItemsPerPage, SortBy, SortDirection) :
+                        _query.TypedProductContentByKeys(ProductKeys, CollectionKeys, Page, ItemsPerPage, SortBy, SortDirection);
+                }
+
+                return HasSearchTerm ?
+                    _query.TypedProductContentByKeys(ProductKeys, CollectionKeys, SearchTerm, MinPrice, MaxPrice, Page, ItemsPerPage, SortBy, SortDirection) :
+                    _query.TypedProductContentByKeys(ProductKeys, CollectionKeys, MinPrice, MaxPrice, Page, ItemsPerPage, SortBy, SortDirection);
+            }
+
             var hasCollections = CollectionKeys != null && CollectionKeys.Any();
 
 

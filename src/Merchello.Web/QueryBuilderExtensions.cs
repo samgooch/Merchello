@@ -102,6 +102,31 @@
         /// Filters and Collections are actually both <see cref="IEntityCollection"/>s and the underlying query just uses the 
         /// collection key(s) so they can be added directly.
         /// </remarks>
+        public static IProductContentQueryBuilder ConstrainByProductKeys(this IProductContentQueryBuilder builder, Guid[] productKeys)
+        {
+            foreach (var productKey in productKeys)
+            {
+                builder.AddProductKeyConstraint(productKey);
+            }
+            return builder;
+        }
+
+        /// <summary>
+        /// Directly adds a constraint by a <see cref="IEntityCollection"/> key.
+        /// </summary>
+        /// <param name="builder">
+        /// The builder.
+        /// </param>
+        /// <param name="collectionKey">
+        /// The collection key.
+        /// </param>
+        /// <returns>
+        /// The <see cref="IProductContentQueryBuilder"/>.
+        /// </returns>
+        /// <remarks>
+        /// Filters and Collections are actually both <see cref="IEntityCollection"/>s and the underlying query just uses the 
+        /// collection key(s) so they can be added directly.
+        /// </remarks>
         public static IProductContentQueryBuilder ConstrainByCollectionKey(this IProductContentQueryBuilder builder, Guid collectionKey)
         {
             builder.AddCollectionKeyConstraint(collectionKey);

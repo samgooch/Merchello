@@ -321,7 +321,7 @@
         /// <returns>
         /// The <see cref="IEnumerable{IProductContent}"/>.
         /// </returns>
-        public IEnumerable<IProductContent> TypedProductContentSearch(long page, long itemsPerPage, string sortBy = "name", SortDirection sortDirection = SortDirection.Descending)
+        public IEnumerable<IProductContent> TypedProductContentSearch(long page, long itemsPerPage, string sortBy, SortDirection sortDirection = SortDirection.Descending)
         {
             return TypedProductContentSearchPaged(page, itemsPerPage, sortBy, sortDirection).Items;
         }
@@ -351,7 +351,7 @@
             string term,
             long page,
             long itemsPerPage,
-            string sortBy = "name",
+            string sortBy,
             SortDirection sortDirection = SortDirection.Ascending)
         {
             return TypedProductContentSearchPaged(term, page, itemsPerPage, sortBy, sortDirection).Items;
@@ -378,7 +378,7 @@
         public PagedCollection<IProductContent> TypedProductContentSearchPaged(
             long page,
             long itemsPerPage,
-            string sortBy = "name",
+            string sortBy,
             SortDirection sortDirection = SortDirection.Descending)
         {
             var cacheKey = PagedKeyCache.GetPagedQueryCacheKey<ICachedProductQuery>("Search", page, itemsPerPage, sortBy, sortDirection);
@@ -417,7 +417,7 @@
             string term,
             long page,
             long itemsPerPage,
-            string sortBy = "name",
+            string sortBy,
             SortDirection sortDirection = SortDirection.Descending)
         {
             var cacheKey = PagedKeyCache.GetPagedQueryCacheKey<ICachedProductQuery>("Search", page, itemsPerPage, sortBy, sortDirection, new Dictionary<string, string> { { "term", term } });
@@ -583,6 +583,133 @@
             if (!keys.Any()) return PagedCollection<IProductContent>.Empty();
 
             var pagedKeys = ((ProductService)Service).GetKeysThatExistInAllCollections(keys, searchTerm, min, max, page, itemsPerPage, sortBy, sortDirection);
+
+            return _cache.MapPagedCollection(pagedKeys, sortBy);
+        }
+
+        /// <summary>
+        /// Gets a <see cref="PagedCollection{IProductContent}"/> that exists in every collection referenced.
+        /// </summary>
+        /// <param name="productKeys">
+        /// The collection of product keys.
+        /// </param>
+        /// <param name="collectionKeys">
+        /// The collection of collection keys.
+        /// </param>
+        /// <param name="page">
+        /// The page.
+        /// </param>
+        /// <param name="itemsPerPage">
+        /// The items per page.
+        /// </param>
+        /// <param name="sortBy">
+        /// The sort by.
+        /// </param>
+        /// <param name="sortDirection">
+        /// The sort direction.
+        /// </param>
+        /// <returns>
+        /// The <see cref="PagedCollection"/>.
+        /// </returns>
+        public PagedCollection<IProductContent> TypedProductContentByKeys(
+            IEnumerable<Guid> productKeys,
+            IEnumerable<Guid> collectionKeys,
+            long page,
+            long itemsPerPage,
+            string sortBy = "",
+            SortDirection sortDirection = SortDirection.Ascending)
+        {
+            var keys = productKeys as Guid[] ?? productKeys.ToArray();
+
+            if (!keys.Any()) return PagedCollection<IProductContent>.Empty();
+
+            var pagedKeys = ((ProductService)Service).GetProductKeys(keys, collectionKeys, page, itemsPerPage, sortBy, sortDirection);
+
+            return _cache.MapPagedCollection(pagedKeys, sortBy);
+        }
+
+        /// <summary>
+        /// Gets a <see cref="PagedCollection{IProductContent}"/> that exists in every collection referenced.
+        /// </summary>
+        /// <param name="productKeys">
+        /// The collection of product keys.
+        /// </param>
+        /// <param name="collectionKeys">
+        /// The collection of collection keys.
+        /// </param>
+        /// <param name="searchTerm">
+        /// The search Term.
+        /// </param>
+        /// <param name="page">
+        /// The page.
+        /// </param>
+        /// <param name="itemsPerPage">
+        /// The items per page.
+        /// </param>
+        /// <param name="sortBy">
+        /// The sort by.
+        /// </param>
+        /// <param name="sortDirection">
+        /// The sort direction.
+        /// </param>
+        /// <returns>
+        /// The <see cref="PagedCollection"/>.
+        /// </returns>
+        public PagedCollection<IProductContent> TypedProductContentByKeys(
+            IEnumerable<Guid> productKeys,
+            IEnumerable<Guid> collectionKeys,
+            string searchTerm,
+            long page,
+            long itemsPerPage,
+            string sortBy = "",
+            SortDirection sortDirection = SortDirection.Ascending)
+        {
+            var keys = productKeys as Guid[] ?? productKeys.ToArray();
+
+            if (!keys.Any()) return PagedCollection<IProductContent>.Empty();
+
+            var pagedKeys = ((ProductService)Service).GetProductKeys(keys, collectionKeys, searchTerm, page, itemsPerPage, sortBy, sortDirection);
+
+            return _cache.MapPagedCollection(pagedKeys, sortBy);
+        }
+
+        /// <inheritdoc/>
+        public PagedCollection<IProductContent> TypedProductContentByKeys(
+            IEnumerable<Guid> productKeys,
+            IEnumerable<Guid> collectionKeys,
+            decimal min,
+            decimal max,
+            long page,
+            long itemsPerPage,
+            string sortBy = "",
+            SortDirection sortDirection = SortDirection.Ascending)
+        {
+            var keys = productKeys as Guid[] ?? productKeys.ToArray();
+
+            if (!keys.Any()) return PagedCollection<IProductContent>.Empty();
+
+            var pagedKeys = ((ProductService)Service).GetProductKeys(keys, collectionKeys.ToArray(), min, max, page, itemsPerPage, sortBy, sortDirection);
+
+            return _cache.MapPagedCollection(pagedKeys, sortBy);
+        }
+
+        /// <inheritdoc/>
+        public PagedCollection<IProductContent> TypedProductContentByKeys(
+            IEnumerable<Guid> productKeys,
+            IEnumerable<Guid> collectionKeys,
+            string searchTerm,
+            decimal min,
+            decimal max,
+            long page,
+            long itemsPerPage,
+            string sortBy = "",
+            SortDirection sortDirection = SortDirection.Ascending)
+        {
+            var keys = productKeys as Guid[] ?? productKeys.ToArray();
+
+            if (!keys.Any()) return PagedCollection<IProductContent>.Empty();
+
+            var pagedKeys = ((ProductService)Service).GetProductKeys(keys, collectionKeys.ToArray(), searchTerm, min, max, page, itemsPerPage, sortBy, sortDirection);
 
             return _cache.MapPagedCollection(pagedKeys, sortBy);
         }
@@ -968,7 +1095,7 @@
         /// <returns>
         /// The <see cref="QueryResultDisplay"/>.
         /// </returns>
-        public QueryResultDisplay Search(long page, long itemsPerPage, string sortBy = "name", SortDirection sortDirection = SortDirection.Descending)
+        public QueryResultDisplay Search(long page, long itemsPerPage, string sortBy, SortDirection sortDirection = SortDirection.Descending)
         {
             var cacheKey = PagedKeyCache.GetPagedQueryCacheKey<ICachedProductQuery>("Search", page, itemsPerPage, sortBy, sortDirection);
             var pagedKeys = PagedKeyCache.GetPageByCacheKey(cacheKey);
@@ -998,7 +1125,7 @@
         /// <returns>
         /// The <see cref="QueryResultDisplay"/>.
         /// </returns>
-        public QueryResultDisplay Search(string term, long page, long itemsPerPage, string sortBy = "name", SortDirection sortDirection = SortDirection.Ascending)
+        public QueryResultDisplay Search(string term, long page, long itemsPerPage, string sortBy, SortDirection sortDirection = SortDirection.Ascending)
         {
             var cacheKey = PagedKeyCache.GetPagedQueryCacheKey<ICachedProductQuery>("Search", page, itemsPerPage, sortBy, sortDirection, new Dictionary<string, string> { { "term", term } });
             var pagedKeys = PagedKeyCache.GetPageByCacheKey(cacheKey);
@@ -1083,7 +1210,7 @@
             IEnumerable<string> choiceNames,
             long page,
             long itemsPerPage,
-            string sortBy = "name",
+            string sortBy,
             SortDirection sortDirection = SortDirection.Descending)
         {
             var choices = choiceNames as string[] ?? choiceNames.ToArray();

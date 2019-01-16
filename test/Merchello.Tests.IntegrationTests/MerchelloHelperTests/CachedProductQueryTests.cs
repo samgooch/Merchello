@@ -182,7 +182,7 @@
             // handled in setup
 
             //// Act
-            var products = _merchello.Query.Product.GetProductsWithOption("Color", new[] { "Purple" }, 1, 10);
+            var products = _merchello.Query.Product.GetProductsWithOption("Color", new[] { "Purple" }, 1, 10, string.Empty);
 
             //// Assert
             Assert.IsTrue(products.Items.Any(), "Search did not return any items");
@@ -294,7 +294,7 @@
             //// Arrange
             
             //// Act
-            var results = _merchello.Query.Product.Search(1, 150);
+            var results = _merchello.Query.Product.Search(1, 150, string.Empty);
             var product = results.Items.Any() ? (ProductDisplay)results.Items.First() : null;
 
             if (product == null) Assert.Ignore("Can't test product since there were'nt any");
@@ -312,7 +312,7 @@
             //// Arrange
 
             //// Act
-            var results = _merchello.Query.Product.Search(1, 150);
+            var results = _merchello.Query.Product.Search(1, 150, string.Empty);
             var products = results.Items.Any() ? results.Items.Where(x => ((ProductDisplay)x).Length == 11M) : Enumerable.Empty<ProductDisplay>();
 
             //// Assert

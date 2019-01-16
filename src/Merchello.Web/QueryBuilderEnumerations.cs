@@ -32,13 +32,28 @@
         Name,
 
         /// <summary>
-        /// The product price.
+        /// The product price
         /// </summary>
         Price,
 
         /// <summary>
         /// The product SKU 
         /// </summary>
-        Sku
+        Sku,
+
+        /// <summary>
+        /// The product create date
+        /// </summary>
+        CreateDate,
+
+        /// <summary>
+        /// The product update date
+        /// </summary>
+        UpdateDate,
+
+        /// <summary>
+        /// No sort
+        /// </summary>
+        None
     }
 }

@@ -230,6 +230,37 @@
         }
 
         /// <summary>
+        /// Gets a collection of <see cref="IEntityFilterGroup"/> by a collection of keys that are associated
+        /// with a product
+        /// </summary>
+        /// <param name="keys">
+        /// The keys.
+        /// </param>
+        /// <param name="productKeys">
+        /// The product keys.
+        /// </param>
+        /// <returns>
+        /// The <see cref="IEnumerable{IEntitySpecifiedFilterCollection}"/>.
+        /// </returns>
+        public IEnumerable<IEntityFilterGroup> GetEntityFilterGroupsContainingProducts(Guid[] keys, Guid[] productKeys)
+        {
+            var sql =
+                new Sql("SELECT pk").From<EntityCollectionDto>(SqlSyntax)
+                    .Where("providerKey IN (@keys)", new { @keys = keys })
+                    .Append(" AND [merchEntityCollection].[pk] IN (")
+                    .Append("SELECT DISTINCT(entityCollectionKey)")
+                    .Append("FROM	merchProduct2EntityCollection")
+                    .Append("WHERE productKey IN (@pKeys", new { @pKeys = productKeys })
+                    .Append(")");
+
+            var matches = Database.Fetch<KeyDto>(sql);
+
+            return !matches.Any() ?
+                Enumerable.Empty<IEntityFilterGroup>() :
+                matches.Select(x => this.GetEntityFilterGroup(x.Key)).Where(x => x != null);
+        }
+
+        /// <summary>
         /// Gets a collection of <see cref="IEntityFilterGroup"/> by a collection of keys that are not associated
         /// with a product
         /// </summary>

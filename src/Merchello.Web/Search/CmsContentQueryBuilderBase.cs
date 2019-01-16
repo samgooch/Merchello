@@ -27,6 +27,10 @@
         where TFilterProxy : IEntityProxy
         where TResult : ICmsContent
     {
+        /// <summary>
+        /// The product keys.
+        /// </summary>
+        private readonly HashSet<Guid> _productKeys = new HashSet<Guid>();
 
         /// <summary>
         /// The collection keys.
@@ -62,6 +66,17 @@
         /// Gets or sets a setting for specifying how the query should treat collection clusivity in specified collections and filters.
         /// </summary>
         public CollectionClusivity CollectionClusivity { get; set; }
+
+        /// <summary>
+        /// Gets the product keys.
+        /// </summary>
+        protected virtual Guid[] ProductKeys
+        {
+            get
+            {
+                return _productKeys.ToArray();
+            }
+        }
 
         /// <summary>
         /// Gets the collection keys.
@@ -130,6 +145,17 @@
         }
 
         /// <summary>
+        /// Adds a collection of keys to the product hash.
+        /// </summary>
+        /// <param name="key">
+        /// The keys.
+        /// </param>
+        public void AddProductKeyConstraint(Guid key)
+        {
+            EnsureAddProductKey(key);
+        }
+
+        /// <summary>
         /// Adds a collection of keys to the collection hash.
         /// </summary>
         /// <param name="key">
@@ -137,7 +163,7 @@
         /// </param>
         public void AddCollectionKeyConstraint(Guid key)
         {
-            EnsureAdd(key);
+            EnsureAddCollectionKey(key);
         }
 
         /// <summary>
@@ -181,7 +207,7 @@
         /// </param>
         private void Add(IEntityProxy entity)
         {
-            EnsureAdd(entity.Key);
+            EnsureAddCollectionKey(entity.Key);
         }
 
         /// <summary>
@@ -205,7 +231,7 @@
         {
             foreach (var key in keys)
             {
-                EnsureAdd(key);
+                EnsureAddCollectionKey(key);
             }
         }
 
@@ -215,9 +241,20 @@
         /// <param name="key">
         /// The key.
         /// </param>
-        private void EnsureAdd(Guid key)
+        private void EnsureAddCollectionKey(Guid key)
         {
             if (!_collectionKeys.Contains(key)) _collectionKeys.Add(key);
+        }
+
+        /// <summary>
+        /// Ensures the hash set does not contain a key before it's added.
+        /// </summary>
+        /// <param name="key">
+        /// The key.
+        /// </param>
+        private void EnsureAddProductKey(Guid key)
+        {
+            if (!_productKeys.Contains(key)) _productKeys.Add(key);
         }
     }
 }

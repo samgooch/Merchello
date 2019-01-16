@@ -23,6 +23,17 @@
         IEnumerable<IProductFilterGroup> GetFilterGroupsContainingProduct(Guid productKey);
 
         /// <summary>
+        /// Gets a collection of <see cref="IProductFilterGroup"/> that has at least one filter that contains a product with key passed as parameter.
+        /// </summary>
+        /// <param name="productKeys">
+        /// The product keys.
+        /// </param>
+        /// <returns>
+        /// The <see cref="IEnumerable{IProductFilterGroup}"/>.
+        /// </returns>
+        IEnumerable<IProductFilterGroup> GetFilterGroupsContainingProducts(Guid[] productKeys);
+
+        /// <summary>
         /// Gets a collection of <see cref="IProductFilterGroup"/> in which NONE of the filters contains a product with key passed as parameter.
         /// </summary>
         /// <param name="productKey">

@@ -119,6 +119,14 @@
         /// <param name="key">
         /// The key.
         /// </param>
+        void AddProductKeyConstraint(Guid key);
+
+        /// <summary>
+        /// Allows for directly adding <see cref="IEntityCollection"/> keys.
+        /// </summary>
+        /// <param name="key">
+        /// The key.
+        /// </param>
         void AddCollectionKeyConstraint(Guid key);
 
         /// <summary>

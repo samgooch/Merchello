@@ -191,7 +191,27 @@
         [HttpGet]
         public ProductDisplay GetProductFromService(Guid id)
         {
-            return _productService.GetByKey(id).ToProductDisplay(DetachedValuesConversionType.Editor);
+            var productDisplay = _productService.GetByKey(id).ToProductDisplay(DetachedValuesConversionType.Editor);
+            var variants = productDisplay.ProductVariants.ToList();
+            variants = variants.OrderBy(x => GetSkuNumber(x.Sku)).ToList();
+            return productDisplay;
+        }
+
+        private int GetSkuNumber(string sku)
+        {
+            var size = sku.Split('-').LastOrDefault().ToUpperInvariant();
+            if (size == "XS")
+                return 0;
+            if (size == "S")
+                return 1;
+            if (size == "M")
+                return 2;
+            if (size == "L")
+                return 3;
+            if (size == "XL")
+                return 4;
+
+            return int.MaxValue;
         }
 
         /// <summary>
