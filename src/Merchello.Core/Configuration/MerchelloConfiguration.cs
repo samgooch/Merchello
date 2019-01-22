@@ -237,6 +237,14 @@ namespace Merchello.Core.Configuration
         }
 
         /// <summary>
+        /// Gets a value indicating whether orders should be marked as fulfilled if they contain no shippable items
+        /// </summary>
+        public bool MarkOrderAsFulfilledIfNoShippableItems
+        {
+            get { return bool.Parse(Section.Settings["MarkOrderAsFulfilledIfNoShippableItems"].Value); }
+        }
+
+        /// <summary>
         /// Gets the pattern formatter.
         /// </summary>
         /// <remarks>

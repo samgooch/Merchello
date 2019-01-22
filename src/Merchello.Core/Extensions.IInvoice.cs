@@ -359,7 +359,7 @@ namespace Merchello.Core
         {
             var orderStatusKey = invoice.HasShippableItems()
                                      ? Constants.OrderStatus.NotFulfilled
-                                     : Constants.OrderStatus.Fulfilled;
+                                     : (MerchelloConfiguration.Current.MarkOrderAsFulfilledIfNoShippableItems ? Constants.OrderStatus.Fulfilled : Constants.OrderStatus.NotFulfilled);
 
             var orderStatus =
                 merchelloContext.Services.OrderService.GetOrderStatusByKey(orderStatusKey);
